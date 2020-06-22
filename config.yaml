@@ -1,0 +1,7 @@
+curve:
+  iop: 20
+  c: 0.02
+  k: 0.14
+
+relay:
+  sampleargs: [0, 20, 0, 0]

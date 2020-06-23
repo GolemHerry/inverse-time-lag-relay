@@ -1,7 +1,14 @@
 curve:
-  iop: 20
+  iop: 10
   c: 0.02
   k: 0.14
 
 relay:
-  sampleargs: [0, 20, 0, 0]
+  sampleargs:
+    current:
+      - name: a
+        values: [0, 40.2, 0, 0]
+      - name: b
+        values: [0, 20.2, 0, 0]
+      - name: c
+        values: [0, 20.2, 0, 0]

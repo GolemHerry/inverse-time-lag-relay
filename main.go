@@ -18,7 +18,7 @@ func main() {
 	curve.Init(config.Curve.Iop, config.Curve.C, config.Curve.K)
 	//runtime.GOMAXPROCS(8)
 	inverseTimeLagRelay := relay.NewRelay(config.Relay.SampleArgs)
-	go inverseTimeLagRelay.Run()
+	inverseTimeLagRelay.Run()
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt)
 	<-quit

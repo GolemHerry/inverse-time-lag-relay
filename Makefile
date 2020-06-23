@@ -8,4 +8,4 @@ build:
 
 .PHONY: clean
 clean:
-	go clean -i && rm -rf build deployment/server deployment/agent
+	go clean -i && rm -rf build

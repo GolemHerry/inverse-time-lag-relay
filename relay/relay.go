@@ -2,7 +2,6 @@ package relay
 
 import (
 	"context"
-	"fmt"
 	"github.com/nathan-osman/go-rpigpio"
 	"inverse_time_lag_relay/ADC"
 	"inverse_time_lag_relay/curve"
@@ -18,6 +17,8 @@ const (
 	relayOpened
 	relayFaulted
 )
+
+const PHASES = 3
 
 var pin, _ = rpi.OpenPin(2, rpi.OUT)
 
@@ -49,16 +50,16 @@ func NewRelay(sample SampleArgs) *Relay {
 	}
 }
 
-func (r *Relay) detect(i int) float64 {
+func (r *Relay) probe(i int) float64 {
 	res := fft.Calculate(ADC.GenerateSample(r.SampleArgs.Current[i].Values))
 	return curve.StdCurve.GetTime(res.Amplitude())
 }
 
 func (r *Relay) action(ctx context.Context, timeToJump float64, name string) {
 	ticker := time.Tick(time.Millisecond * time.Duration(timeToJump))
+	now := time.Now()
 LOOP:
 	for {
-		fmt.Println(time.Millisecond * time.Duration(timeToJump))
 		select {
 		case <-ticker:
 			break LOOP
@@ -69,7 +70,10 @@ LOOP:
 			time.Sleep(time.Millisecond * 10)
 		}
 	}
-	log.Printf("the %s break down, relayState turns to opened", name)
+	if r.GetRelayState() == relayOpened {
+		return
+	}
+	log.Printf("A  failure on  %s happend at %v , relayState turns to opened", name, now)
 	r.setRelayState(relayOpened)
 }
 
@@ -83,12 +87,12 @@ func (r *Relay) Run() {
 		for {
 			if r.GetRelayState() == relayOpened {
 				if err := pin.Write(rpi.LOW); err != nil {
-					fmt.Println(err)
+					log.Println(err)
 					return
 				}
 			} else if r.GetRelayState() == relayClosed {
 				if err := pin.Write(rpi.HIGH); err != nil {
-					fmt.Println(err)
+					log.Println(err)
 					return
 				}
 			}
@@ -97,10 +101,14 @@ func (r *Relay) Run() {
 	}()
 	var lastCancel [3]context.CancelFunc
 	for {
+		if r.GetRelayState() == relayOpened {
+			log.Println("relay opened")
+			return
+		}
 		select {
 		case <-r.ticker.C:
-			for i := 0; i < 3; i++ {
-				timeToJump := r.detect(i)
+			for i := 0; i < PHASES; i++ {
+				timeToJump := r.probe(i)
 				ctx, cancel := context.WithCancel(context.Background())
 				if timeToJump < 0 || r.getLastTimeToJump(i) < timeToJump {
 					r.setLastTimeToJump(i, timeToJump)
@@ -120,7 +128,7 @@ func (r *Relay) Run() {
 				lastCancel[i] = cancel
 			}
 		default:
-			time.Sleep(time.Millisecond)
+			time.Sleep(time.Millisecond * 20)
 		}
 	}
 }

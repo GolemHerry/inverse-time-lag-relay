@@ -7,11 +7,14 @@ import (
 )
 
 func main() {
-	pin, _ := rpi.OpenPin(1, rpi.IN)
+	pin, _ := rpi.OpenPin(2, rpi.IN)
+	var lastVal, val rpi.Value
+	var err error
 	for {
-		if val, _ := pin.Read(); val == rpi.HIGH {
+		if val, err = pin.Read(); val != lastVal && err == nil {
 			fmt.Println(val)
 		}
+		lastVal = val
 		time.Sleep(time.Millisecond * 20)
 	}
 }

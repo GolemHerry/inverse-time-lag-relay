@@ -1,5 +1,5 @@
 OS   = linux
-ARCH = arm64
+ARCH = arm
 
 .PHONY: build
 
